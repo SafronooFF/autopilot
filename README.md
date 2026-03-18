@@ -1,4 +1,4 @@
-плата t-motor f7 <br>
+плата t-motor f7 pro <br>
 <br>
 распиновка пинов: <br>
 <br>
@@ -9,3 +9,5 @@ PB7 - 6 серва справа <br>
 PB6 - 5 серва слева <br>
 PB5 - 4 <br>
 PB4 - 3 <br>
+
+IMU: ICM42688P
