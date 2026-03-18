@@ -11,3 +11,4 @@ PB5 - 4 <br>
 PB4 - 3 <br>
 
 IMU: ICM42688P
+IMU на SPI1
