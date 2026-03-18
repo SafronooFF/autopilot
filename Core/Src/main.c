@@ -49,7 +49,6 @@ uint16_t ibus_channels[IBUS_CHANNELS];
 
 SPI_HandleTypeDef hspi1;
 
-TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 
 UART_HandleTypeDef huart2;
@@ -64,7 +63,6 @@ static void MPU_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM4_Init(void);
-static void MX_TIM3_Init(void);
 static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -83,13 +81,35 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+	void hello_imu(void){
+		  uint8_t data_rx[8];
+		  uint8_t who_am_i = 0x75 | 0x80; // 0x80 - маска с приёмом данных читать даташит !!!!!
+		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);
+		  HAL_SPI_Transmit(&hspi1, &who_am_i, 1, 100); //просим данные в регистр who_am_i он его не видит
+		  HAL_SPI_Receive(&hspi1, &data_rx, 8, 100);
+		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);
+	}
+
 	uint16_t get_data_accel_axis(uint8_t upper_register_accel_axis){
 		uint8_t data_accel = upper_register_accel_axis | 0x80;
 		uint8_t data_accel_buff[2];
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);
 		HAL_SPI_Transmit(&hspi1, &data_accel, 1, 100);
 		HAL_SPI_Receive(&hspi1, data_accel_buff, 2, 100);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);
 
 		return (uint16_t)((data_accel_buff[0] << 8) | data_accel_buff[1]);
+	}
+
+	uint16_t get_data_gyro_axis(uint8_t upper_register_gyro_axis){
+		uint8_t data_gyro = upper_register_gyro_axis | 0x80;
+		uint8_t data_gyro_buff[2];
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);
+		HAL_SPI_Transmit(&hspi1, &data_gyro, 1, 100);
+		HAL_SPI_Receive(&hspi1, data_gyro_buff, 2, 100);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);
+
+		return (uint16_t)((data_gyro_buff[0] << 8) | data_gyro_buff[1]);
 	}
   /* USER CODE END 1 */
 
@@ -116,12 +136,11 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_TIM4_Init();
-  MX_TIM3_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
   HAL_UART_Receive_DMA(&huart2, ibus_rx_buffer, 32);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -154,21 +173,18 @@ int main(void)
 
 	  	  	  //int16_t pitch2 = 200;
 	  	  	  //int16_t roll2 =100;
-			  int16_t right_elevon = 1500+pitch+roll;
-			  int16_t left_elevon = 1500+pitch-roll;
-			  //int16_t right_elevon = 1000;
-			  //int16_t left_elevon = 200;
+			  //int16_t right_elevon = 1500+pitch+roll;
+			  //int16_t left_elevon = 1500+pitch-roll;
+			  int16_t right_elevon = 1000;
+			  int16_t left_elevon = 1000;
 
 			  TIM4 -> CCR1 = right_elevon;
-			  TIM3 -> CCR2 = left_elevon;
+			  TIM4 -> CCR2 = left_elevon;
 		  }
 	  }
 
 	  // проверка связи на IMU
-	  uint8_t data_rx[8];
-	  uint8_t who_am_i = 0x75 | 0x80; // 0x80 - маска с приёмом данных читать даташит !!!!!
-	  HAL_SPI_Transmit(&hspi1, &who_am_i, 1, 100); //просим данные в регистр who_am_i он его не видит
-	  HAL_SPI_Receive(&hspi1, &data_rx, 8, 100);
+	  hello_imu();
 
 	  //получение данных с акселерометра
 	  uint16_t data_accel_x = get_data_accel_axis(0x1F);
@@ -280,65 +296,6 @@ static void MX_SPI1_Init(void)
 }
 
 /**
-  * @brief TIM3 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM3_Init(void)
-{
-
-  /* USER CODE BEGIN TIM3_Init 0 */
-
-  /* USER CODE END TIM3_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
-
-  /* USER CODE BEGIN TIM3_Init 1 */
-
-  /* USER CODE END TIM3_Init 1 */
-  htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 107;
-  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 2000;
-  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM3_Init 2 */
-
-  /* USER CODE END TIM3_Init 2 */
-  HAL_TIM_MspPostInit(&htim3);
-
-}
-
-/**
   * @brief TIM4 Initialization Function
   * @param None
   * @retval None
@@ -387,6 +344,10 @@ static void MX_TIM4_Init(void)
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -448,14 +409,14 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(IMU_CS_GPIO_Port, IMU_CS_Pin, GPIO_PIN_SET);
 
-  /*Configure GPIO pin : PA4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  /*Configure GPIO pin : IMU_CS_Pin */
+  GPIO_InitStruct.Pin = IMU_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(IMU_CS_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
