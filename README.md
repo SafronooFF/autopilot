@@ -10,5 +10,5 @@ PB6 - 5 серва слева <br>
 PB5 - 4 <br>
 PB4 - 3 <br>
 
-IMU: ICM42688P
+IMU: ICM42688P <br>
 IMU на SPI1
