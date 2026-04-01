@@ -51,7 +51,9 @@ SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim4;
 
+UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
+UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 
@@ -64,6 +66,8 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_USART1_UART_Init(void);
+static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -111,6 +115,8 @@ int main(void)
 
 		return (uint16_t)((data_gyro_buff[0] << 8) | data_gyro_buff[1]);
 	}
+
+
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/
@@ -137,8 +143,10 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM4_Init();
   MX_SPI1_Init();
+  MX_USART1_UART_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_UART_Receive_DMA(&huart2, ibus_rx_buffer, 32);
+ // HAL_UART_Receive_DMA(&huart2, ibus_rx_buffer, 32);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
   /* USER CODE END 2 */
@@ -150,6 +158,13 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+//Радио (USART3)
+char my_messgae[] = "tx \n";
+
+HAL_UART_Transmit(&huart3, (uint8_t*)my_messgae, 4, 100);
+
+HAL_Delay(1000);
+/////////////////
 
 	  if (ibus_rx_buffer[0] == 0x20 && ibus_rx_buffer[1] == 0x40){
 		  uint16_t calculate = 0xFFFF;
@@ -173,10 +188,10 @@ int main(void)
 
 	  	  	  //int16_t pitch2 = 200;
 	  	  	  //int16_t roll2 =100;
-			  //int16_t right_elevon = 1500+pitch+roll;
-			  //int16_t left_elevon = 1500+pitch-roll;
-			  int16_t right_elevon = 1000;
-			  int16_t left_elevon = 1000;
+			  int16_t right_elevon = 1500+pitch+roll;
+			  int16_t left_elevon = 1500+pitch-roll;
+			  //int16_t right_elevon = 1000;
+			  //int16_t left_elevon = 1000;
 
 			  TIM4 -> CCR1 = right_elevon;
 			  TIM4 -> CCR2 = left_elevon;
@@ -190,12 +205,20 @@ int main(void)
 	  uint16_t data_accel_x = get_data_accel_axis(0x1F);
 	  uint16_t data_accel_y = get_data_accel_axis(0x21);
 	  uint16_t data_accel_z = get_data_accel_axis(0x23);
-	  /*uint8_t data_accel_upper_x = 0x1F | 0x80;
+	  uint8_t data_accel_upper_x = 0x1F | 0x80;
 	  uint8_t data_accel_buff[2];
 	  HAL_SPI_Transmit(&hspi1, &data_accel_upper_x, 1, 100);
 	  HAL_SPI_Receive(&hspi1, data_accel_buff, 2, 100);
 
-	  uint16_t data_accel_x = (uint16_t)((data_accel_buff[0] << 8) | data_accel_buff[1]) ;*/
+//	  uint16_t data_accel_x = (uint16_t)((data_accel_buff[0] << 8) | data_accel_buff[1]);
+
+	  // Формируем строку
+	  //char *msg = "Hello world!\r\n";
+	  //CDC_Transmit_FS((uint8_t*)msg, strlen(msg));
+
+	  HAL_Delay(1000); // Пауза 1 секунда
+ 																					//	!!!!!!!!!!!!!!!!!!!!
+/////////////////////////////////////////////////////////////////
 
 
   }
@@ -227,7 +250,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLM = 8;
   RCC_OscInitStruct.PLL.PLLN = 216;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 2;
+  RCC_OscInitStruct.PLL.PLLQ = 9;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -359,6 +382,41 @@ static void MX_TIM4_Init(void)
 }
 
 /**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
@@ -390,6 +448,41 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
+  * @brief USART3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART3_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART3_Init 0 */
+
+  /* USER CODE END USART3_Init 0 */
+
+  /* USER CODE BEGIN USART3_Init 1 */
+
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 57600;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART3_Init 2 */
+
+  /* USER CODE END USART3_Init 2 */
 
 }
 
