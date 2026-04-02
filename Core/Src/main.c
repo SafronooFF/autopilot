@@ -116,6 +116,10 @@ int main(void)
 		return (uint16_t)((data_gyro_buff[0] << 8) | data_gyro_buff[1]);
 	}
 
+	void setup_function_imu(void){
+		// ACCEL_CONFIG0
+		uint8_t accel_config0 = 0x05; // +-q2g и 2kHz
+	}
 
   /* USER CODE END 1 */
 
@@ -158,12 +162,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//Радио (USART3)
-char my_messgae[] = "tx \n";
+	  //Радио (USART3)
+	  char my_messgae[] = "tx \n";
 
-HAL_UART_Transmit(&huart3, (uint8_t*)my_messgae, 4, 100);
+	  HAL_UART_Transmit(&huart3, (uint8_t*)my_messgae, 4, 100);
 
-HAL_Delay(1000);
+	  HAL_Delay(1000);
 /////////////////
 
 	  if (ibus_rx_buffer[0] == 0x20 && ibus_rx_buffer[1] == 0x40){
@@ -205,10 +209,22 @@ HAL_Delay(1000);
 	  uint16_t data_accel_x = get_data_accel_axis(0x1F);
 	  uint16_t data_accel_y = get_data_accel_axis(0x21);
 	  uint16_t data_accel_z = get_data_accel_axis(0x23);
-	  uint8_t data_accel_upper_x = 0x1F | 0x80;
-	  uint8_t data_accel_buff[2];
-	  HAL_SPI_Transmit(&hspi1, &data_accel_upper_x, 1, 100);
-	  HAL_SPI_Receive(&hspi1, data_accel_buff, 2, 100);
+
+	  //uint8_t data_accel_upper_x = 0x1F | 0x80;
+	  //uint8_t data_accel_buff[2];
+
+	  //HAL_SPI_Transmit(&hspi1, &data_accel_upper_x, 1, 100);
+	  //HAL_SPI_Receive(&hspi1, data_accel_buff, 2, 100);
+
+	  //получение данных с гироскопа
+	  uint16_t data_accel_x = get_data_gyro_axis(0x25);
+	  uint16_t data_accel_y = get_data_gyro_axis(0x27);
+	  uint16_t data_accel_z = get_data_gyro_axis(0x29);
+
+
+	  a(t) = (1-K) * (a(t-1) + gx*dt) + K * acc
+	  // https://robotclass.ru/articles/complementary-filter/
+
 
 //	  uint16_t data_accel_x = (uint16_t)((data_accel_buff[0] << 8) | data_accel_buff[1]);
 
