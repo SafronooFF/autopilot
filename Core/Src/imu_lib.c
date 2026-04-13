@@ -1,5 +1,7 @@
 #include "imu_lib.h"
+#include "main.h"
 
+extern SPI_HandleTypeDef hspi1;
 
 //https://byte-tools.com/en/binary/bin-to-hex/
 void hello_imu(void){
@@ -35,6 +37,16 @@ int16_t get_data_gyro_axis(uint8_t upper_register_gyro_axis){
 
 void setup_function_imu(void){
 	uint8_t tx_buf[2] = {0}; //страница 52 в datasheet: сначала адрес потом данные
+
+	//DEVICE_CONFIG
+	tx_buf[0] = 0x11;
+	tx_buf[1] = 0x00;
+
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);
+	HAL_SPI_Transmit(&hspi1, &tx_buf, 2, 10);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);
+
+	HAL_Delay(10);
 
 	//INTF_CONFIG0
 	tx_buf[0] = 0x4C;

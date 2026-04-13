@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
 #define IBUS_FRAME_SIZE 32
 #define IBUS_CHANNELS 14
 
@@ -128,8 +129,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  setup_function_imu();
 	  //Радио (USART3)
-	  char my_messgae[] = "tx \n";
+	  uint16_t my_messgae = get_data_accel_axis(0x1F);
 
 	  HAL_UART_Transmit(&huart3, (uint8_t*)my_messgae, 4, 100);
 
@@ -175,9 +177,9 @@ int main(void)
 	  hello_imu();
 
 	  //получение данных с акселерометра
-	  uint16_t data_accel_x = get_data_accel_axis(0x1F);
-	  uint16_t data_accel_y = get_data_accel_axis(0x21);
-	  uint16_t data_accel_z = get_data_accel_axis(0x23);
+	  int16_t data_accel_x = get_data_accel_axis(0x1F);
+	  int16_t data_accel_y = get_data_accel_axis(0x21);
+	  int16_t data_accel_z = get_data_accel_axis(0x23);
 
 	  //uint8_t data_accel_upper_x = 0x1F | 0x80;
 	  //uint8_t data_accel_buff[2];
@@ -186,12 +188,12 @@ int main(void)
 	  //HAL_SPI_Receive(&hspi1, data_accel_buff, 2, 100);
 
 	  //получение данных с гироскопа
-	  uint16_t data_accel_x = get_data_gyro_axis(0x25);
-	  uint16_t data_accel_y = get_data_gyro_axis(0x27);
-	  uint16_t data_accel_z = get_data_gyro_axis(0x29);
+	  int16_t data_gyro_x = get_data_gyro_axis(0x25);
+	  int16_t data_gyro_y = get_data_gyro_axis(0x27);
+	  int16_t data_gyro_z = get_data_gyro_axis(0x29);
 
 
-	  a(t) = (1-K) * (a(t-1) + gx*dt) + K * acc
+	  //a(t) = (1-K) * (a(t-1) + gx*dt) + K * acc
 	  // https://robotclass.ru/articles/complementary-filter/
 
 

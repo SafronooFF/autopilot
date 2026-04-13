@@ -1,0 +1,4 @@
+../Core/Src/imu_lib.c:7:6:hello_imu	1
+../Core/Src/imu_lib.c:16:9:get_data_accel_axis	1
+../Core/Src/imu_lib.c:27:9:get_data_gyro_axis	1
+../Core/Src/imu_lib.c:38:6:setup_function_imu	1
