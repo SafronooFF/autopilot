@@ -1,13 +1,64 @@
 #ifndef IMU_LIB_H_
 #define IMU_LIB_H_
+
 #include "stm32f7xx_hal.h"
 #include <stdint.h>
 
+extern SPI_HandleTypeDef hspi1;
+extern UART_HandleTypeDef huart3;
+
+#define READ_BIT_IMU  	          0x80; // 0x80 - маска с приёмом данных читать даташит !!!!!
+//Упорядочить как в datasheet
+
+//DEVICE_CONFIG
+#define DEVICE_CONFIG_REG     0x11
+#define DEVICE_CONFIG_DATA    0x00
+//INTF_CONFIG0
+#define INTF_CONFIG0_REG      0x4C
+#define INTF_CONFIG0_DATA     0xF3
+//INTF_CONFIG1
+#define INTF_CONFIG1_REG      0x4D
+#define INTF_CONFIG1_DATA     0x99
+//PWR_MGMT0
+#define PWR_MGMT0_REG         0x4E
+#define PWR_MGMT0_DATA        0xF
+//ACCEL_CONFIG0
+#define ACCEL_CONFIG0_REG     0x50
+#define ACCEL_CONFIG0_DATA    0x02 // +-q16g и 16kHz
+//GYRO_CONFIG0
+#define GYRO_CONFIG0_REG      0x4F
+#define GYRO_CONFIG0_DATA     0x02 // +-2000dps и 16kHz
+
+//axis accel
+#define AXIS_ACCEL_X          0x1F //axis x
+#define AXIS_ACCEL_Y          0x21 //axis y
+#define AXIS_ACCEL_Z          0x23 //axis z
+
+//axis accel
+#define AXIS_GYRO_X           0x25 //axis x
+#define AXIS_GYRO_Y           0x27 //axis y
+#define AXIS_GYRO_Z           0x29 //axis z
+
+
+
+typedef struct {
+    int16_t x, y, z;
+} AccelData;
+
+typedef struct {
+    int16_t x, y, z; //check
+} GyroData;
+
+
+
+
 void hello_imu(void);
 void setup_function_imu(void);
+void update_accel_data(GyroData *data);
+void update_accel_data(AccelData *data);
 int16_t get_data_accel_axis(uint8_t upper_register_accel_axis);
 int16_t get_data_gyro_axis(uint8_t upper_register_gyro_axis);
-void setup_function_imu(void);
+
 
 
 
