@@ -3,9 +3,7 @@
 
 
 
-int _write(int file, char *ptr, int len){ //printf для uart
-	HAL_UART_Transmit(&huart3, (uint8_t*) ptr, len, 100); return len;
-}
+
 
 //функция для упрощённой отправки конфигурации
 void set_function_in(uint8_t write_register, uint8_t data_setting){ //страница 52 в datasheet: сначала адрес потом данные
@@ -64,13 +62,19 @@ void setup_function_imu(void){
 }
 
 void update_accel_data(AccelData *data){
-	data -> x = get_data_accel_axis(AXIS_ACCEL_X);
-	data -> y = get_data_accel_axis(AXIS_ACCEL_Y);
-	data -> z = get_data_accel_axis(AXIS_ACCEL_Z);
+	data -> x = ((float)(get_data_accel_axis(AXIS_ACCEL_X)/ACCEL_SENS_SCALE))*G;
+	data -> y = ((float)(get_data_accel_axis(AXIS_ACCEL_Y)/ACCEL_SENS_SCALE))*G;
+	data -> z = ((float)(get_data_accel_axis(AXIS_ACCEL_Z)/ACCEL_SENS_SCALE))*G;
 }
 
+void update_gyro_data(GyroData *data){
+	data -> x = ((float)(get_data_accel_axis(AXIS_ACCEL_X)/GYRO_SENS_SCALE));
+	data -> y = ((float)(get_data_accel_axis(AXIS_ACCEL_Y)/GYRO_SENS_SCALE));
+	data -> z = ((float)(get_data_accel_axis(AXIS_ACCEL_Z)/GYRO_SENS_SCALE));
+}
+/*
 void update_accel_data(GyroData *data){
 	data -> x = get_data_gyro_axis(AXIS_GYRO_X);
 	data -> y = get_data_gyro_axis(AXIS_GYRO_Y);
 	data -> z = get_data_gyro_axis(AXIS_GYRO_Z);
-}
+}*/

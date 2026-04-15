@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
 #define IBUS_FRAME_SIZE 32
 #define IBUS_CHANNELS 14
 
@@ -33,7 +33,9 @@ uint16_t ibus_channels[IBUS_CHANNELS];
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+int _write(int file, char *ptr, int len){ //printf для uart
+	HAL_UART_Transmit(&huart3, (uint8_t*) ptr, len, 100); return len;
+}
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -120,6 +122,8 @@ int main(void)
  // HAL_UART_Receive_DMA(&huart2, ibus_rx_buffer, 32);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
+
+  GyroData data_acc;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -129,13 +133,16 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  // проверка связи на IMU
+	  hello_imu();
 	  setup_function_imu();
 	  //Радио (USART3)
-	  uint16_t my_messgae = get_data_accel_axis(0x1F);
+	  //uint16_t my_messgae = get_data_accel_axis(0x1F);
 
-	  HAL_UART_Transmit(&huart3, (uint8_t*)my_messgae, 4, 100);
-
-	  HAL_Delay(1000);
+	  //HAL_UART_Transmit(&huart3, (uint8_t*)my_messgae, 4, 100);
+	  update_gyro_data(&data_acc);
+	  printf("%.2f %.2f %.2f\r\n",data_acc.x, data_acc.y, data_acc.z);
+	  HAL_Delay(100);
 /////////////////
 
 	  if (ibus_rx_buffer[0] == 0x20 && ibus_rx_buffer[1] == 0x40){
@@ -173,13 +180,12 @@ int main(void)
 	  //применение конфигурации
 
 
-	  // проверка связи на IMU
-	  hello_imu();
+
 
 	  //получение данных с акселерометра
-	  int16_t data_accel_x = get_data_accel_axis(0x1F);
-	  int16_t data_accel_y = get_data_accel_axis(0x21);
-	  int16_t data_accel_z = get_data_accel_axis(0x23);
+	  //int16_t data_accel_x = get_data_accel_axis(0x1F);
+	  //int16_t data_accel_y = get_data_accel_axis(0x21);
+	  //int16_t data_accel_z = get_data_accel_axis(0x23);
 
 	  //uint8_t data_accel_upper_x = 0x1F | 0x80;
 	  //uint8_t data_accel_buff[2];
@@ -188,9 +194,9 @@ int main(void)
 	  //HAL_SPI_Receive(&hspi1, data_accel_buff, 2, 100);
 
 	  //получение данных с гироскопа
-	  int16_t data_gyro_x = get_data_gyro_axis(0x25);
-	  int16_t data_gyro_y = get_data_gyro_axis(0x27);
-	  int16_t data_gyro_z = get_data_gyro_axis(0x29);
+	  //int16_t data_gyro_x = get_data_gyro_axis(0x25);
+	  //int16_t data_gyro_y = get_data_gyro_axis(0x27);
+	  //int16_t data_gyro_z = get_data_gyro_axis(0x29);
 
 
 	  //a(t) = (1-K) * (a(t-1) + gx*dt) + K * acc

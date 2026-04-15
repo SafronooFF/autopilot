@@ -40,13 +40,20 @@ extern UART_HandleTypeDef huart3;
 #define AXIS_GYRO_Z           0x29 //axis z
 
 
+//3.2 ACCELEROMETER SPECIFICATIONS/Sensitivity Scale Factor
+#define ACCEL_SENS_SCALE      2048.0f
+#define G                     9.80665f
+
+//3.1 GYROSCOPE SPECIFICATIONS
+#define GYRO_SENS_SCALE       16.4f
+#define PI                    3.14f
 
 typedef struct {
-    int16_t x, y, z;
+    float x, y, z;
 } AccelData;
 
 typedef struct {
-    int16_t x, y, z; //check
+    float x, y, z; //check
 } GyroData;
 
 
@@ -54,7 +61,7 @@ typedef struct {
 
 void hello_imu(void);
 void setup_function_imu(void);
-void update_accel_data(GyroData *data);
+void update_gyro_data(GyroData *data);
 void update_accel_data(AccelData *data);
 int16_t get_data_accel_axis(uint8_t upper_register_accel_axis);
 int16_t get_data_gyro_axis(uint8_t upper_register_gyro_axis);
