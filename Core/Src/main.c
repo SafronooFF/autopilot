@@ -123,7 +123,6 @@ int main(void)
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
 
-  AxisData gyro, accel;
   //AccelData data_acc;
   setup_function_imu(); //выставляем конфигурацию
   /* USER CODE END 2 */
@@ -137,18 +136,17 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	  // проверка связи на IMU
 	  hello_imu();
-	  update_data_AccelGyro();
+	  IMU_data_update();
 	  //Радио (USART3)
 	  //uint16_t my_messgae = get_data_accel_axis(0x1F);
 
 	  //HAL_UART_Transmit(&huart3, (uint8_t*)my_messgae, 4, 100);
-	  get_data();
 
 
 	  //converted_accel_data(&data_acc);
 	  //converted_gyro_data(&data_gyro);
 
-	  printf("%.2f %.2f %.2f\r\n",data_acc.x, data_acc.y, data_acc.z);
+	  printf("%.2f %.2f %.2f\r\n",imu.ax, imu.gy, data_acc.z_acc);
 	  HAL_Delay(100);
 
 /////////////////

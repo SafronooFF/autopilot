@@ -11,29 +11,43 @@ void set_function_in(uint8_t write_register, uint8_t data_setting){ //стран
 
 //https://byte-tools.com/en/binary/bin-to-hex/
 void hello_imu(void){ //подумаь над функцией
-	  uint8_t data_rx[8];
+	  uint8_t data_rx;
 	  uint8_t who_am_i = 0x75 | READ_BIT_IMU;
 	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0); //cs low
 	  HAL_SPI_Transmit(&hspi1, &who_am_i, 1, 10); //просим данные в регистр who_am_i он его не видит
-	  HAL_SPI_Receive(&hspi1, &data_rx, 8, 10);
+	  HAL_SPI_Receive(&hspi1, &data_rx, 1, 10);
 	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1); // cs hight
 }
 
-void get_update_data_AccelGyro(void){
+void IMU_data_update(void){
+	if (hello_imu()==)
 	for (int i = 0; i!=6; i++){
 		reg_axis_AccelGyro[i]  |= READ_BIT_IMU;
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);
 		HAL_SPI_Transmit(&hspi1, &data_accel, 1, 10);
 		HAL_SPI_Receive(&hspi1, data_accel_buff, 2, 10);
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);
-		if (i<=3){
-			data_axis_accel[i]=((float)((int16_t)((&data_accel_buff[i] << 8) | &data_accel_buff[i+1])))*G;//m/s^2
-		}
-		else{
-			data_axis_gyro[i]=((float)((int16_t)((&data_gyro_buff[i] << 8) | &data_gyro_buff[i+1])))*(PI/180.0f); //radian
+		switch (i){
+		case 0:
+			data -> x_acc = ((float)((int16_t)((&data_accel_buff[i] << 8) | &data_accel_buff[i+1])))*G;//m/s^2
+			break;
+		case 1:
+			data -> y_acc = ((float)((int16_t)((&data_accel_buff[i] << 8) | &data_accel_buff[i+1])))*G;//m/s^2
+			break;
+		case 2:
+			data -> z_acc = ((float)((int16_t)((&data_accel_buff[i] << 8) | &data_accel_buff[i+1])))*G;//m/s^2
+			break;
+		case 3:
+			data -> gx= ((float)((int16_t)((&data_gyro_buff[i] << 8) | &data_gyro_buff[i+1])))*G;//radian
+			break;
+		case 4:
+			data -> gy= ((float)((int16_t)((&data_gyro_buff[i] << 8) | &data_gyro_buff[i+1])))*G;//radian
+			break;
+		case 5:
+			data -> gz= ((float)((int16_t)((&data_gyro_buff[i] << 8) | &data_gyro_buff[i+1])))*G;//radian
+			break;
 		}
 	}
-
 }
 
 int16_t get_data_gyro_axis_raw(uint8_t upper_register_gyro_axis){
@@ -62,24 +76,3 @@ void setup_function_imu(void){
 	set_function_in(GYRO_CONFIG0_REG, GYRO_CONFIG0_DATA);
 }
 
-void get_data(AxisData *data){ //в метрах^2/секунду
-	data -> x_acc = data_axis_accel[0];
-	data -> y_acc = data_axis_accel[1];
-	data -> z_acc = data_axis_accel[2];
-	data -> gx = data_axis_gyro[0];
-	data -> gy = data_axis_gyro[1];
-	data -> gz = data_axis_gyro[2];
-}
-
-
-void converted_gyro_data(GyroData *data){//радианы
-	data -> x = ((float)(get_data_gyro_axis_raw(AXIS_ACCEL_X)/GYRO_SENS_SCALE))*(PI/180.0f);
-	data -> y = ((float)(get_data_accel_axis_raw(AXIS_ACCEL_Y)/GYRO_SENS_SCALE))*(PI/180.0f);
-	data -> z = ((float)(get_data_accel_axis_raw(AXIS_ACCEL_Z)/GYRO_SENS_SCALE))*(PI/180.0f);
-}
-/*
-void update_accel_data(GyroData *data){
-	data -> x = get_data_gyro_axis(AXIS_GYRO_X);
-	data -> y = get_data_gyro_axis(AXIS_GYRO_Y);
-	data -> z = get_data_gyro_axis(AXIS_GYRO_Z);
-}*/

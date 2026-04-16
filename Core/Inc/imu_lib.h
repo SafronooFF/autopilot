@@ -49,25 +49,19 @@ extern UART_HandleTypeDef huart3;
 #define PI                    3.14159265358979323846f
 
 typedef struct {
-    float gx, gy, gz, x_acc, y_acc, z_acc;
-} AxisData;
+    float ax, ay, az;
+    float gx, gy, gz;
+} IMU_Data;
 
-uint8_t reg_axis_AccelGyro[5] = {AXIS_ACCEL_X, AXIS_ACCEL_Y, AXIS_ACCEL_Z, AXIS_GYRO_X, AXIS_GYRO_Y, AXIS_GYRO_Z};
-uint8_t data_accel_buff[5];
-uint8_t data_gyro_buff[5];
-float data_axis_gyro[2];
-float data_axis_accell[2];
+IMU_Data imu;
 
-void update_data_AccelGyro(void);
-void get_data(AxisData *data);
+uint8_t reg_axis_AccelGyro[5] = {AXIS_ACCEL_X, AXIS_ACCEL_Y, AXIS_ACCEL_Z, AXIS_GYRO_X, AXIS_GYRO_Y, AXIS_GYRO_Z}; //регистры для получения данных определённых осей
+uint8_t data_accel_buff[5]; //буфер для записи полученных данных акселерометра
+uint8_t data_gyro_buff[5]; // буфер для записи полученных данных гироскоп
 
-
-void hello_imu(void);
-void setup_function_imu(void);
-void converted_gyro_data(GyroData *data);   //конвертируемые данные
-void converted_accel_data(AccelData *data); //конвертируемые данные
-int16_t get_data_accel_axis_raw(uint8_t upper_register_accel_axis); //сырые данные
-int16_t get_data_gyro_axis_raw(uint8_t upper_register_gyro_axis); 	//сырые данные
+void get_update_data_AccelGyro(void);//Функция получения сырых данных и их преобразование
+void hello_imu(void); //
+void setup_function_imu(void); //фунция конфигурации
 
 
 
