@@ -1,4 +1,7 @@
-../Core/Src/imu_lib.c:7:6:hello_imu	32	static
-../Core/Src/imu_lib.c:16:9:get_data_accel_axis	24	static
-../Core/Src/imu_lib.c:27:9:get_data_gyro_axis	0	static
-../Core/Src/imu_lib.c:38:6:setup_function_imu	24	static
+../Core/Src/imu_lib.c:4:6:set_function_in	24	static
+../Core/Src/imu_lib.c:13:6:hello_imu	32	static
+../Core/Src/imu_lib.c:22:9:get_data_accel_axis_raw	24	static
+../Core/Src/imu_lib.c:34:9:get_data_gyro_axis_raw	0	static
+../Core/Src/imu_lib.c:45:6:setup_function_imu	8	static
+../Core/Src/imu_lib.c:60:6:converted_accel_data	16	static
+../Core/Src/imu_lib.c:66:6:converted_gyro_data	16	static

@@ -64,7 +64,7 @@ main-build: bpla.elf secondary-outputs
 
 # Tool invocations
 bpla.elf bpla.map: $(OBJS) $(USER_OBJS) /home/ros-pc/STM32CubeIDE/wp6/bpla/STM32F722RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "bpla.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/home/ros-pc/STM32CubeIDE/wp6/bpla/STM32F722RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="bpla.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "bpla.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/home/ros-pc/STM32CubeIDE/wp6/bpla/STM32F722RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="bpla.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

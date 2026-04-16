@@ -1,13 +1,13 @@
+#include "main.h"
+#include <stdint.h>
+
 #ifndef IMU_LIB_H_
 #define IMU_LIB_H_
-
-#include "stm32f7xx_hal.h"
-#include <stdint.h>
 
 extern SPI_HandleTypeDef hspi1;
 extern UART_HandleTypeDef huart3;
 
-#define READ_BIT_IMU  	          0x80; // 0x80 - маска с приёмом данных читать даташит !!!!!
+#define READ_BIT_IMU  	      0x80; // 0x80 - маска с приёмом данных читать даташит !!!!!
 //Упорядочить как в datasheet
 
 //DEVICE_CONFIG
@@ -46,25 +46,29 @@ extern UART_HandleTypeDef huart3;
 
 //3.1 GYROSCOPE SPECIFICATIONS
 #define GYRO_SENS_SCALE       16.4f
-#define PI                    3.14f
+#define PI                    3.14159265358979323846f
 
 typedef struct {
-    float x, y, z;
-} AccelData;
+    float gx, gy, gz, x_acc, y_acc, z_acc;
+} AxisData;
 
-typedef struct {
-    float x, y, z; //check
-} GyroData;
+uint8_t reg_axis_AccelGyro[5] = {AXIS_ACCEL_X, AXIS_ACCEL_Y, AXIS_ACCEL_Z, AXIS_GYRO_X, AXIS_GYRO_Y, AXIS_GYRO_Z};
+uint8_t data_accel_buff[5];
+uint8_t data_gyro_buff[5];
+float data_axis_gyro[2];
+float data_axis_accell[2];
 
-
+void update_data_AccelGyro(void);
+void get_data(AxisData *data);
 
 
 void hello_imu(void);
 void setup_function_imu(void);
-void update_gyro_data(GyroData *data);
-void update_accel_data(AccelData *data);
-int16_t get_data_accel_axis(uint8_t upper_register_accel_axis);
-int16_t get_data_gyro_axis(uint8_t upper_register_gyro_axis);
+void converted_gyro_data(GyroData *data);   //конвертируемые данные
+void converted_accel_data(AccelData *data); //конвертируемые данные
+int16_t get_data_accel_axis_raw(uint8_t upper_register_accel_axis); //сырые данные
+int16_t get_data_gyro_axis_raw(uint8_t upper_register_gyro_axis); 	//сырые данные
+
 
 
 
