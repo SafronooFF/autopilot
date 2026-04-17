@@ -53,14 +53,13 @@ typedef struct {
     float gx, gy, gz;
 } IMU_Data;
 
-IMU_Data imu;
+extern IMU_Data imu;
 
-uint8_t reg_axis_AccelGyro[5] = {AXIS_ACCEL_X, AXIS_ACCEL_Y, AXIS_ACCEL_Z, AXIS_GYRO_X, AXIS_GYRO_Y, AXIS_GYRO_Z}; //регистры для получения данных определённых осей
-uint8_t data_accel_buff[5]; //буфер для записи полученных данных акселерометра
-uint8_t data_gyro_buff[5]; // буфер для записи полученных данных гироскоп
+//uint8_t reg_axis_AccelGyro[5] = {AXIS_ACCEL_X, AXIS_ACCEL_Y, AXIS_ACCEL_Z, AXIS_GYRO_X, AXIS_GYRO_Y, AXIS_GYRO_Z}; //регистры для получения данных определённых осей
+//uint8_t data_accel_buff[5]; //буфер для записи полученных данных акселерометра
+//uint8_t data_gyro_buff[5]; // буфер для записи полученных данных гироскоп
 
-void get_update_data_AccelGyro(void);//Функция получения сырых данных и их преобразование
-void hello_imu(void); //
+void IMU_data_update(void);//Функция получения сырых данных и их преобразование
 void setup_function_imu(void); //фунция конфигурации
 
 

@@ -135,7 +135,6 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  // проверка связи на IMU
-	  hello_imu();
 	  IMU_data_update();
 	  //Радио (USART3)
 	  //uint16_t my_messgae = get_data_accel_axis(0x1F);
@@ -146,7 +145,8 @@ int main(void)
 	  //converted_accel_data(&data_acc);
 	  //converted_gyro_data(&data_gyro);
 
-	  printf("%.2f %.2f %.2f\r\n",imu.ax, imu.gy, data_acc.z_acc);
+	  printf("%.2f %.2f %.2f\r\n",imu.ax, imu.ay, imu.az);
+	  printf("%.2f %.2f %.2f\r\n",imu.gx, imu.gy, imu.gz);
 	  HAL_Delay(100);
 
 /////////////////
