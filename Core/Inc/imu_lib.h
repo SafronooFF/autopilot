@@ -49,8 +49,8 @@ extern UART_HandleTypeDef huart3;
 #define PI                    3.14159265358979323846f
 
 typedef struct {
-    float ax, ay, az;
-    float gx, gy, gz;
+	int16_t ax, ay, az;
+	int16_t gx, gy, gz;
 } IMU_Data;
 
 extern IMU_Data imu;
@@ -59,7 +59,7 @@ extern IMU_Data imu;
 //uint8_t data_accel_buff[5]; //буфер для записи полученных данных акселерометра
 //uint8_t data_gyro_buff[5]; // буфер для записи полученных данных гироскоп
 
-void IMU_data_update(void);//Функция получения сырых данных и их преобразование
+HAL_StatusTypeDef IMU_data_update(void);//Функция получения сырых данных и их преобразование
 void setup_function_imu(void); //фунция конфигурации
 
 

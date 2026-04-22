@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <math.h>
 #include <stdio.h>
 #define IBUS_FRAME_SIZE 32
 #define IBUS_CHANNELS 14
@@ -101,7 +102,26 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  #define K_DRONE 0.01f
 
+  uint32_t last_tick = 0;
+  float angleX_gyro = 0, angleY_gyro = 0, angleZ_gyro = 0;
+  float yaw = 0;
+  float angle_roll = 0, angle_pitch = 0;
+
+  void update_fltr(void){
+	  uint32_t current_tick = HAL_GetTick();
+	  float dt = (current_tick - last_tick) / 1000.0f;
+	  last_tick = current_tick;
+	  angleX_gyro += imu.gx*dt;
+	  angleY_gyro += imu.gy*dt;
+	  yaw += imu.gz*dt;
+
+	  float acc_roll  = atan2f(imu.ay, imu.az);
+	  float acc_pitch = atan2f(-imu.ax, sqrtf(imu.ay*imu.ay + imu.az*imu.az));
+	  angle_roll  = (1.0f - K_DRONE) * (angle_roll  + angleX_gyro) + K_DRONE * acc_roll;
+	  angle_pitch = (1.0f - K_DRONE) * (angle_pitch + angleY_gyro) + K_DRONE * acc_pitch;
+  }
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -136,18 +156,23 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	  // проверка связи на IMU
 	  IMU_data_update();
+	  //printf("state %d\r\n", IMU_data_update());
 	  //Радио (USART3)
 	  //uint16_t my_messgae = get_data_accel_axis(0x1F);
 
 	  //HAL_UART_Transmit(&huart3, (uint8_t*)my_messgae, 4, 100);
-
+	  update_fltr();
 
 	  //converted_accel_data(&data_acc);
 	  //converted_gyro_data(&data_gyro);
 
-	  printf("%.2f %.2f %.2f\r\n",imu.ax, imu.ay, imu.az);
-	  printf("%.2f %.2f %.2f\r\n",imu.gx, imu.gy, imu.gz);
+	  printf("%.2f %.2f %.2f\r\n", angle_roll, angle_pitch, yaw);
+	  //printf("%.2f %.2f %.2f\r\n",imu.gx, imu.gy, imu.gz);
+	  //printf("accel %d %d %d gyro %d %d %d\r\n",imu.ax, imu.ay, imu.az, imu.gx, imu.gy, imu.gz);
+	  //printf(
 	  HAL_Delay(100);
+
+	  //a(t) = a(t-1) + gx*dt ;
 
 /////////////////
 
@@ -215,7 +240,7 @@ int main(void)
 	  //char *msg = "Hello world!\r\n";
 	  //CDC_Transmit_FS((uint8_t*)msg, strlen(msg));
 
-	  HAL_Delay(1000); // Пауза 1 секунда
+	  //HAL_Delay(1000); // Пауза 1 секунда
  																					//	!!!!!!!!!!!!!!!!!!!!
 /////////////////////////////////////////////////////////////////
 

@@ -21,40 +21,34 @@ uint16_t hello_imu(void){ //подумаь над функцией
 	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1); // cs hight
 	  return data_rx;
 }
+uint8_t rx_buff[12] = {0};
+int16_t raw_data[6] = {0};
+HAL_StatusTypeDef IMU_data_update(void){
 
-void IMU_data_update(void){
-		uint8_t rx_buff[12];
-		int16_t raw_data[6];
 		uint8_t reg = AXIS_ACCEL_X  | READ_BIT_IMU;
+		HAL_StatusTypeDef state = HAL_OK;
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);
-		HAL_SPI_Transmit(&hspi1, &reg, 1, 10);
-		HAL_SPI_Receive(&hspi1, rx_buff, 12, 10);
+		state |= HAL_SPI_Transmit(&hspi1, &reg, 1, 10);
+		state |= HAL_SPI_Receive(&hspi1, rx_buff, 12, 100);
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);
 	    for (int i = 0; i < 6; i++) {
 	        raw_data[i] = (int16_t)((rx_buff[i * 2] << 8) | rx_buff[i * 2 + 1]);
 	    }
-		imu.ax = (float)((int16_t)(raw_data[0]))*G/ACCEL_SENS_SCALE;//m/s^2
-		imu.ay = (float)((int16_t)(raw_data[1]))*G/ACCEL_SENS_SCALE;//m/s^2
-		imu.az = (float)((int16_t)(raw_data[2]))*G/ACCEL_SENS_SCALE;//m/s^2
-		imu.gx = (float)((int16_t)(raw_data[3]))*(PI/180.0F)/GYRO_SENS_SCALE;//radian
-		imu.gy = (float)((int16_t)(raw_data[4]))*(PI/180.0F)/GYRO_SENS_SCALE;//radian
-		imu.gz = (float)((int16_t)(raw_data[5]))*(PI/180.0F)/GYRO_SENS_SCALE;//radian
+		imu.ax = ((int16_t)(raw_data[0]))*G/ACCEL_SENS_SCALE;//m/s^2
+		imu.ay = ((int16_t)(raw_data[1]))*G/ACCEL_SENS_SCALE;//m/s^2
+		imu.az = ((int16_t)(raw_data[2]))*G/ACCEL_SENS_SCALE;//m/s^2
+
+		imu.gx = ((int16_t)(raw_data[3]))*(PI/180.0F)/GYRO_SENS_SCALE;//radian
+		imu.gy = ((int16_t)(raw_data[4]))*(PI/180.0F)/GYRO_SENS_SCALE;//radian
+		imu.gz = ((int16_t)(raw_data[5]))*(PI/180.0F)/GYRO_SENS_SCALE;//radian
+
+		return state;
 
 }
 
-int16_t get_data_gyro_axis_raw(uint8_t upper_register_gyro_axis){
-	uint8_t data_gyro = upper_register_gyro_axis | READ_BIT_IMU;
-	uint8_t data_gyro_buff[2];
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);
-	HAL_SPI_Transmit(&hspi1, &data_gyro, 1, 10);
-	HAL_SPI_Receive(&hspi1, data_gyro_buff, 2, 10);
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);
-
-	return (int16_t)((data_gyro_buff[0] << 8) | data_gyro_buff[1]);
-}
 
 void setup_function_imu(void){
-	if (hello_imu()==0x47){
+	//if (hello_imu()==0x47){
 		//DEVICE_CONFIG
 		set_function_in(DEVICE_CONFIG_REG, DEVICE_CONFIG_DATA);
 		//INTF_CONFIG0
@@ -67,6 +61,9 @@ void setup_function_imu(void){
 		set_function_in(ACCEL_CONFIG0_REG, ACCEL_CONFIG0_DATA);
 		//GYRO_CONFIG0
 		set_function_in(GYRO_CONFIG0_REG, GYRO_CONFIG0_DATA);
-	}
+	//}
+	//else{
+	//	return;
+	//}
 }
 
