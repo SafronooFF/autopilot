@@ -119,8 +119,8 @@ int main(void)
 
 	  float acc_roll  = atan2f(imu.ay, imu.az);
 	  float acc_pitch = atan2f(-imu.ax, sqrtf(imu.ay*imu.ay + imu.az*imu.az));
-	  angle_roll  = (1.0f - K_DRONE) * (angle_roll  + angleX_gyro) + K_DRONE * acc_roll;
-	  angle_pitch = (1.0f - K_DRONE) * (angle_pitch + angleY_gyro) + K_DRONE * acc_pitch;
+	  angle_roll  = (1.0f - K_DRONE) * (angle_roll  + imu.gx * dt) + K_DRONE * acc_roll;
+	  angle_pitch = (1.0f - K_DRONE) * (angle_pitch + imu.gy * dt) + K_DRONE * acc_pitch;
   }
   /* USER CODE END Init */
 
@@ -162,6 +162,23 @@ int main(void)
 
 	  //HAL_UART_Transmit(&huart3, (uint8_t*)my_messgae, 4, 100);
 	  update_fltr();
+
+	  float Kp = 500.0f;
+
+	  // Рассчитываем отклонение (в радианах * коэффициент)
+	  float pitch_corr = angle_pitch * Kp;
+	  float roll_corr  = angle_roll  * Kp;
+
+	  int16_t right_elevon = 1500 + (int16_t)(pitch_corr + roll_corr);
+	  int16_t left_elevon  = 1500 + (int16_t)(pitch_corr - roll_corr);
+
+	  if(right_elevon > 2000) right_elevon = 2000;
+	  if(right_elevon < 1000) right_elevon = 1000;
+	  if(left_elevon > 2000)  left_elevon = 2000;
+	  if(left_elevon < 1000)  left_elevon = 1000;
+
+	  TIM4 -> CCR1 = right_elevon;
+	  TIM4 -> CCR2 = left_elevon;
 
 	  //converted_accel_data(&data_acc);
 	  //converted_gyro_data(&data_gyro);
@@ -364,7 +381,7 @@ static void MX_TIM4_Init(void)
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 107;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 2000;
+  htim4.Init.Period = 20000;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
