@@ -102,10 +102,15 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  enum{seting=1, update_imu, fltr, el_work,};
+  int s = 0;
+
+
+
   #define K_DRONE 0.01f
 
   uint32_t last_tick = 0;
-  float angleX_gyro = 0, angleY_gyro = 0, angleZ_gyro = 0;
+  float angleX_gyro = 0, angleY_gyro = 0; //angleZ_gyro = 0;
   float yaw = 0;
   float angle_roll = 0, angle_pitch = 0;
 
@@ -121,6 +126,19 @@ int main(void)
 	  float acc_pitch = atan2f(-imu.ax, sqrtf(imu.ay*imu.ay + imu.az*imu.az));
 	  angle_roll  = (1.0f - K_DRONE) * (angle_roll  + imu.gx * dt) + K_DRONE * acc_roll;
 	  angle_pitch = (1.0f - K_DRONE) * (angle_pitch + imu.gy * dt) + K_DRONE * acc_pitch;
+  }
+
+  switch(s){
+  	  case(seting):
+  			  printf("IMU настроенно");
+  	  case(update_imu):
+  			  printf("обновление данных IMU");
+  	  case(fltr):
+  			  printf("комплементарный фильтр сработал");
+  	  case(el_work):
+  			  printf("элевоны должны рабоать");
+  	  	  	  printf("значение углов крен: %.2f тангаж: %.2f рысканье: %.2f\r\n", angle_roll, angle_pitch, yaw);
+
   }
   /* USER CODE END Init */
 
@@ -145,6 +163,7 @@ int main(void)
 
   //AccelData data_acc;
   setup_function_imu(); //выставляем конфигурацию
+  s = seting;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -156,12 +175,14 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	  // проверка связи на IMU
 	  IMU_data_update();
+	  s = update_imu;
 	  //printf("state %d\r\n", IMU_data_update());
 	  //Радио (USART3)
 	  //uint16_t my_messgae = get_data_accel_axis(0x1F);
 
 	  //HAL_UART_Transmit(&huart3, (uint8_t*)my_messgae, 4, 100);
 	  update_fltr();
+	  s = fltr;
 
 	  float Kp = 500.0f;
 
@@ -172,22 +193,24 @@ int main(void)
 	  int16_t right_elevon = 1500 + (int16_t)(pitch_corr + roll_corr);
 	  int16_t left_elevon  = 1500 + (int16_t)(pitch_corr - roll_corr);
 
-	  if(right_elevon > 2000) right_elevon = 2000;
+	  if(right_elevon > 2000) right_elevon = 1990;
 	  if(right_elevon < 1000) right_elevon = 1000;
-	  if(left_elevon > 2000)  left_elevon = 2000;
+	  if(left_elevon > 2000)  left_elevon = 1990;
 	  if(left_elevon < 1000)  left_elevon = 1000;
 
 	  TIM4 -> CCR1 = right_elevon;
 	  TIM4 -> CCR2 = left_elevon;
+	  s = el_work;
+	  HAL_Delay(100);
 
 	  //converted_accel_data(&data_acc);
 	  //converted_gyro_data(&data_gyro);
 
-	  printf("%.2f %.2f %.2f\r\n", angle_roll, angle_pitch, yaw);
+
 	  //printf("%.2f %.2f %.2f\r\n",imu.gx, imu.gy, imu.gz);
 	  //printf("accel %d %d %d gyro %d %d %d\r\n",imu.ax, imu.ay, imu.az, imu.gx, imu.gy, imu.gz);
 	  //printf(
-	  HAL_Delay(100);
+
 
 	  //a(t) = a(t-1) + gx*dt ;
 
@@ -381,7 +404,7 @@ static void MX_TIM4_Init(void)
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 107;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 20000;
+  htim4.Init.Period = 2000;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
