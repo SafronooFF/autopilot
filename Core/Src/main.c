@@ -51,6 +51,8 @@ int _write(int file, char *ptr, int len){ //printf для uart
 
 /* Private variables ---------------------------------------------------------*/
 
+I2C_HandleTypeDef hi2c1;
+
 SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim4;
@@ -72,6 +74,7 @@ static void MX_TIM4_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -102,6 +105,24 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  #define REG_ADDR_APP 0x28 // APP is Air pressure probe
+  #define PASCAL_VAL 6894.76f
+
+  int8_t data_raw_APP[4] = {0};
+  int16_t data_pressure = 0;
+  int16_t data_temp = 0;
+
+  HAL_I2C_Master_Receive(&hi2c1, REG_ADDR_APP, data_raw_APP, 100);
+
+  data_pressure = (int16_t)(((data_raw_APP[0] & 0x3F) << 8) | data_raw_APP[0]);
+
+  data_temp = (int16_t)((data_raw_APP[0] << 3) | (data_raw_APP[0] << 5));
+
+  float output_data_pa = (((((float)data_pressure)-(0.1 * 16383))*(2 * PASCAL_VAL))/(0.8 * 16383))-PASCAL_VAL; //данные в паскалях
+
+
+
+
   enum{seting=1, update_imu, fltr, el_work,};
   int s = 0;
 
@@ -156,6 +177,7 @@ int main(void)
   MX_SPI1_Init();
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
  // HAL_UART_Receive_DMA(&huart2, ibus_rx_buffer, 32);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
@@ -340,6 +362,54 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = 0x20404768;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Analogue filter
+  */
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Digital filter
+  */
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
+
 }
 
 /**
