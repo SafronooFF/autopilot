@@ -24,6 +24,8 @@
 #define IBUS_FRAME_SIZE 32
 #define IBUS_CHANNELS 14
 
+
+
 uint8_t ibus_rx_buffer[IBUS_FRAME_SIZE];
 uint16_t ibus_channels[IBUS_CHANNELS];
 
@@ -49,11 +51,24 @@ uint16_t ibus_channels[IBUS_CHANNELS];
 
 SPI_HandleTypeDef hspi1;
 
+TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 
 UART_HandleTypeDef huart2;
+UART_HandleTypeDef huart3;
+
+char rx_buffer[32]; // Буфер для накопления строки
+int rx_index = 0;  // Индекс текущего символа
 
 /* USER CODE BEGIN PV */
+uint8_t control_mode = 0; // 0 - пульт (iBus), 1 - радио (UART)
+uint8_t cmd_byte = 0;
+int16_t right_elevon;
+int16_t left_elevon;
+float angle_roll = 0, angle_pitch = 0;
+float angleX_gyro = 0, angleY_gyro = 0, yaw = 0;
+uint32_t last_tick = 0;
+const float K_DRONE = 0.05f; // Коэффициент фильтра
 
 /* USER CODE END PV */
 
@@ -64,12 +79,80 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_USART3_UART_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+/* USER CODE BEGIN 0 */
+int _write(int file, char *ptr, int len){
+	HAL_UART_Transmit(&huart3, (uint8_t*) ptr, len, 100); return len;
+}
+void Process_Radio_Commands(UART_HandleTypeDef *huart) {
+	if (__HAL_UART_GET_FLAG(huart, UART_FLAG_ORE) != RESET) {
+	        __HAL_UART_CLEAR_OREFLAG(huart);
+	    }
+
+    uint8_t byte = 0;
+
+    // Используем таймаут 0, чтобы не блокировать цикл
+    while(HAL_UART_Receive(huart, &byte, 1, 0) == HAL_OK){
+    	if(byte =='\n' || byte =='\r'){
+    		rx_buffer[rx_index] = '\0';  //закрываем строку
+
+    		if (rx_index > 0){
+    			char cmd;
+    			int arg;
+
+    			//парсим накопленное
+    			if(sscanf(rx_buffer, "%c %d", &cmd, &arg) >=2){
+    				switch(cmd) {
+    					case '1':
+    						//Тангаж, вверх
+    						TIM4->CCR2 = arg; TIM4->CCR1 = arg;
+    						break;
+    				    case '2':
+    				    	//Тангаж вниз
+    				    	TIM4->CCR2 = arg; TIM4->CCR1 = arg;
+    				        break;
+    				    case '3':
+    				        //Крен влево
+    				        TIM4->CCR2 = 3000 - arg; TIM4->CCR1 = arg;
+    				        break;
+    				    case '4':
+    				        //Крен вправо
+    				        TIM4->CCR2 = arg; TIM4->CCR1 = 3000 - arg;
+    				        break;
+    				    case '0':
+    				        //нейтраль
+    				        TIM4->CCR2 = 1500; TIM4->CCR1 = 1500;
+    				        break;
+    				    case '9'://запуск параш
+    				        TIM3->CCR4 = 500;
+    				        break;
+    				    case '8'://стоп параш
+    				        TIM3->CCR4 = 1500;
+    				        break;
+    				    default:
+    				        break;
+    			}
+    		}
+    	}
+    	rx_index = 0; //обнуляем индекс для следующей команды
+    }
+    else{
+    	if (rx_index < (sizeof(rx_buffer) - 1)) {
+    		rx_buffer[rx_index++] = (char)byte;
+    	}
+
+    }
+}
+}
+
+
 
 /* USER CODE END 0 */
 
@@ -137,10 +220,18 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM4_Init();
   MX_SPI1_Init();
+  MX_USART3_UART_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  HAL_UART_Receive_DMA(&huart2, ibus_rx_buffer, 32);
+ // HAL_UART_Receive_DMA(&huart2, ibus_rx_buffer, 32);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
+ // setup_function_imu();
+  //TIM4->CCR2 = 1000;
+
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -150,7 +241,22 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  //TIM4->CCR2 = 1000;
+	  //HAL_Delay(500);
+	  //TIM4->CCR2 = 2000;
+	  //HAL_Delay(500);
+	  // 1. Получаем сырые данные из библиотеки(imu.ax, imu.gx и т.д.)
+// IMU_data_update();
 
+	  // 2. Фильтруем их и отправляем в консоль Python0
+//	  update_fltr_and_send();
+
+	  // 3. Слушаем джойстик (управление)
+
+	 Process_Radio_Commands(&huart3);
+
+//	  HAL_Delay(10); // Частота ~100 Гц
+/*
 	  if (ibus_rx_buffer[0] == 0x20 && ibus_rx_buffer[1] == 0x40){
 		  uint16_t calculate = 0xFFFF;
 		  for(int i = 0; i < 30; i++){
@@ -175,8 +281,8 @@ int main(void)
 	  	  	  //int16_t roll2 =100;
 			  //int16_t right_elevon = 1500+pitch+roll;
 			  //int16_t left_elevon = 1500+pitch-roll;
-			  int16_t right_elevon = 1000;
-			  int16_t left_elevon = 1000;
+			  right_elevon = 1000;
+			  left_elevon = 1000;
 
 			  TIM4 -> CCR1 = right_elevon;
 			  TIM4 -> CCR2 = left_elevon;
@@ -195,7 +301,8 @@ int main(void)
 	  HAL_SPI_Transmit(&hspi1, &data_accel_upper_x, 1, 100);
 	  HAL_SPI_Receive(&hspi1, data_accel_buff, 2, 100);
 
-	  uint16_t data_accel_x = (uint16_t)((data_accel_buff[0] << 8) | data_accel_buff[1]) ;*/
+	  uint16_t data_accel_x = (uint16_t)((data_accel_buff[0] << 8) | data_accel_buff[1]) ;
+*/
 
 
   }
@@ -292,6 +399,65 @@ static void MX_SPI1_Init(void)
   /* USER CODE BEGIN SPI1_Init 2 */
 
   /* USER CODE END SPI1_Init 2 */
+
+}
+
+/**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 107;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 2000;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
+  HAL_TIM_MspPostInit(&htim3);
 
 }
 
@@ -394,6 +560,41 @@ static void MX_USART2_UART_Init(void)
 }
 
 /**
+  * @brief USART3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART3_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART3_Init 0 */
+
+  /* USER CODE END USART3_Init 0 */
+
+  /* USER CODE BEGIN USART3_Init 1 */
+
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 57600;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART3_Init 2 */
+
+  /* USER CODE END USART3_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -407,6 +608,7 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(IMU_CS_GPIO_Port, IMU_CS_Pin, GPIO_PIN_SET);
@@ -417,6 +619,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(IMU_CS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PB1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF15_EVENTOUT;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
